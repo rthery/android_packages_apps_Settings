@@ -27,6 +27,7 @@ import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.service.oemlock.OemLockManager;
+import android.service.persistentdata.PersistentDataBlockManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -164,6 +165,8 @@ public class OemUnlockPreferenceController extends DeveloperOptionsPreferenceCon
         int oemUnlockSummary = com.android.settingslib.R.string.oem_unlock_enable_summary;
         if (isBootloaderUnlocked()) {
             oemUnlockSummary = R.string.oem_unlock_enable_disabled_summary_bootloader_unlocked;
+        } else if (isFrpActive()) {
+            oemUnlockSummary = R.string.oem_unlock_enable_disabled_summary_frp_active;
         } else if (isSimLockedDevice()) {
             oemUnlockSummary = R.string.oem_unlock_enable_disabled_summary_sim_locked_device;
         } else if (!isOemUnlockAllowedByUserAndCarrier()) {
@@ -203,7 +206,15 @@ public class OemUnlockPreferenceController extends DeveloperOptionsPreferenceCon
     }
 
     private boolean enableOemUnlockPreference() {
-        return !isBootloaderUnlocked() && isOemUnlockAllowedByUserAndCarrier();
+        return !isBootloaderUnlocked() && !isFrpActive() && isOemUnlockAllowedByUserAndCarrier();
+    }
+
+    /** Returns {@code true} if Factory Reset Protection blocks OEM unlock changes. */
+    @VisibleForTesting
+    boolean isFrpActive() {
+        final PersistentDataBlockManager pdbManager =
+                mContext.getSystemService(PersistentDataBlockManager.class);
+        return pdbManager != null && pdbManager.isFactoryResetProtectionActive();
     }
 
 

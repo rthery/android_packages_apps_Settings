@@ -197,4 +197,7 @@
     <string name="battery_maximum_capacity">Maximum capacity</string>
     <string name="battery_maximum_capacity_summary">%1$d mAh (%2$d%%)</string>
     <string name="battery_maximum_capacity_not_available" translatable="false">@string/battery_cycle_count_not_available</string>
+
+    <!-- Developer options: OEM unlocking summary while factory reset protection is active -->
+    <string name="oem_unlock_enable_disabled_summary_frp_active">Unavailable while factory reset protection is active</string>
 </resources>
