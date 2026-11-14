@@ -24,7 +24,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
+import android.database.ContentObserver;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.PersistableBundle;
 import android.telephony.CarrierConfigManager;
 import android.telephony.ServiceState;
@@ -111,6 +114,23 @@ public class WifiCallingSettingsForSub extends DashboardFragment
     private TelephonyManager mTelephonyManager;
 
     private PhoneTelephonyCallback mTelephonyCallback;
+
+    // The IMS service can turn Wi-Fi calling off by itself, for one when the carrier refuses it.
+    private final ContentObserver mWfcEnabledObserver =
+            new ContentObserver(new Handler(Looper.getMainLooper())) {
+                @Override
+                public void onChange(boolean selfChange) {
+                    // Refreshing the switch must not be taken for the user flipping it.
+                    final boolean listening = mTelephonyCallback != null;
+                    if (listening) {
+                        mSwitchBar.removeOnSwitchChangeListener(WifiCallingSettingsForSub.this);
+                    }
+                    updateBody();
+                    if (listening) {
+                        mSwitchBar.addOnSwitchChangeListener(WifiCallingSettingsForSub.this);
+                    }
+                }
+            };
 
     private class PhoneTelephonyCallback extends TelephonyCallback implements
             TelephonyCallback.CallStateListener {
@@ -438,6 +458,8 @@ public class WifiCallingSettingsForSub extends DashboardFragment
         }
         context.registerReceiver(mIntentReceiver, mIntentFilter,
                 Context.RECEIVER_EXPORTED_UNAUDITED);
+        context.getContentResolver().registerContentObserver(
+                SubscriptionManager.WFC_ENABLED_CONTENT_URI, true, mWfcEnabledObserver);
         final Intent intent = getActivity().getIntent();
         if (intent.getBooleanExtra(Phone.EXTRA_KEY_ALERT_SHOW, false)) {
             showAlert(intent);
@@ -459,6 +481,7 @@ public class WifiCallingSettingsForSub extends DashboardFragment
             mSwitchBar.removeOnSwitchChangeListener(this);
         }
         context.unregisterReceiver(mIntentReceiver);
+        context.getContentResolver().unregisterContentObserver(mWfcEnabledObserver);
     }
 
     /**
